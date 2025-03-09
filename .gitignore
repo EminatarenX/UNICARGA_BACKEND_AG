@@ -1,0 +1,12 @@
+# igonorar pycache
+__pycache__/
+# igonorar venv
+venv/
+# igonorar .env
+.env
+# igonorar .vscode
+.vscode/
+# igonorar .idea
+.idea/
+# igonorar .pytest_cache
+.pytest_cache/
