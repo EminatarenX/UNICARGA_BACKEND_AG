@@ -1,0 +1,59 @@
+id_materia,nombre,cuatrimestre,creditos,horas_totales,tipo
+1,Inglés I,1,4.0,75,Regular
+2,Desarrollo humano y valores,1,4.0,75,Regular
+3,Fundamentos matemáticos,1,5.0,75,Regular
+4,Fundamentos de redes,1,5.0,75,Regular
+5,Física,1,5.0,75,Regular
+6,Fundamentos de programación,1,5.0,75,Regular
+7,Comunicación y habilidades digitales,1,4.81,75,Regular
+8,Inglés II,2,4.0,75,Regular
+9,Habilidades socioemocionales y manejo de conflictos,2,4.0,75,Regular
+10,Cálculo diferencial,2,5.0,75,Regular
+11,Conmutación y enrutamiento de redes,2,5.0,75,Regular
+12,Probabilidad y estadística,2,5.0,75,Regular
+13,Programación estructurada,2,5.0,75,Regular
+14,Sistemas operativos,2,4.81,75,Regular
+15,Inglés III,3,4.0,75,Regular
+16,Desarrollo del pensamiento y toma de decisiones,3,4.0,75,Regular
+17,Cálculo integral,3,5.0,75,Regular
+18,Tópicos de calidad para el diseño de software,3,5.0,75,Regular
+19,Bases de datos,3,5.0,75,Regular
+20,Programación orientada a objetos,3,5.0,75,Regular
+21,Proyecto integrador I,3,4.81,75,Proyecto Integrador
+22,Inglés IV,4,4.0,75,Regular
+23,Ética profesional,4,4.0,75,Regular
+24,Cálculo de varias variables,4,5.0,75,Regular
+25,Aplicaciones web,4,5.0,75,Regular
+26,Estructura de datos,4,5.0,75,Regular
+27,Desarrollo de aplicaciones móviles,4,5.0,75,Regular
+28,Análisis y diseño de software,4,4.81,75,Regular
+29,Inglés V,5,4.0,75,Regular
+30,Liderazgo de equipos de alto desempeño,5,4.0,75,Regular
+31,Ecuaciones diferenciales,5,5.0,75,Regular
+32,Aplicaciones web orientadas a servicios,5,5.0,75,Regular
+33,Bases de datos avanzadas,5,5.0,75,Regular
+34,Estándares y métricas para el desarrollo de software,5,5.0,75,Regular
+35,Proyecto integrador II,5,4.81,75,Proyecto Integrador
+36,Estadía I,6,37.5,600,Estadía
+37,Inglés VI,7,4.0,75,Regular
+38,Habilidades gerenciales,7,4.0,75,Regular
+39,Formulación de proyectos de tecnología,7,5.0,75,Regular
+40,Fundamentos de inteligencia artificial,7,5.0,75,Regular
+41,Ética y legislación en tecnologías de la información,7,5.0,75,Regular
+42,Optativa I,7,5.0,75,Regular
+43,Seguridad informática,7,4.81,75,Regular
+44,Inglés VII,8,4.0,75,Regular
+45,Electrónica digital,8,4.0,75,Regular
+46,Gestión de proyectos de tecnología,8,5.0,75,Regular
+47,Programación para inteligencia artificial,8,5.0,75,Regular
+48,Administración de servidores,8,5.0,75,Regular
+49,Optativa II,8,5.0,75,Regular
+50,Informática forense,8,4.81,75,Regular
+51,Inglés VIII,9,4.0,75,Regular
+52,Internet de las cosas,9,4.0,75,Regular
+53,Evaluación de proyectos de tecnología,9,5.0,75,Regular
+54,Ciencia de datos,9,5.0,75,Regular
+55,Tecnologías disruptivas,9,5.0,75,Regular
+56,Optativa III,9,5.0,75,Regular
+57,Proyecto integrador III,9,4.81,75,Proyecto Integrador
+58,Estadía II,10,37.5,600,Estadía
