@@ -16,7 +16,85 @@ class Optimizador:
         self.grupos = grupos or {}
         self.seriacion = seriacion or {}
         self.dependencias_proyectos = dependencias_proyectos or {}
-        
+        self.horas_por_materia = {
+            # Primer cuatrimestre
+            1: 75,   # INGLÉS I
+            2: 60,   # DESARROLLO HUMANO Y VALORES
+            3: 105,  # FUNDAMENTOS MATEMÁTICOS
+            4: 60,   # FUNDAMENTOS DE REDES
+            5: 90,   # FÍSICA
+            6: 60,   # FUNDAMENTOS DE PROGRAMACIÓN
+            7: 75,   # COMUNICACIÓN Y HABILIDADES DIGITALES
+            
+            # Segundo cuatrimestre
+            8: 75,   # INGLÉS II
+            9: 60,   # HABILIDADES SOCIOEMOCIONALES Y MANEJO DE CONFLICTOS
+            10: 90,  # CÁLCULO DIFERENCIAL
+            11: 75,  # CONMUTACIÓN Y ENRUTAMIENTO DE REDES
+            12: 75,  # PROBABILIDAD Y ESTADÍSTICA
+            13: 75,  # PROGRAMACIÓN ESTRUCTURADA
+            14: 75,  # SISTEMAS OPERATIVOS
+            
+            # Tercer cuatrimestre
+            15: 75,  # INGLÉS III
+            16: 60,  # DESARROLLO DEL PENSAMIENTO Y TOMA DE DECISIONES
+            17: 60,  # CÁLCULO INTEGRAL
+            18: 90,  # TÓPICOS DE CALIDAD PARA EL DISEÑO DE SOFTWARE
+            19: 75,  # BASES DE DATOS
+            20: 105, # PROGRAMACIÓN ORIENTADA A OBJETOS
+            21: 60,  # PROYECTO INTEGRADOR I
+            
+            # Cuarto cuatrimestre
+            22: 75,  # INGLÉS IV
+            23: 60,  # ÉTICA PROFESIONAL
+            24: 75,  # CÁLCULO DE VARIAS VARIABLES
+            25: 75,  # APLICACIONES WEB
+            26: 75,  # ESTRUCTURA DE DATOS
+            27: 90,  # DESARROLLO DE APLICACIONES MÓVILES
+            28: 75,  # ANÁLISIS Y DISEÑO DE SOFTWARE
+            
+            # Quinto cuatrimestre
+            29: 75,  # INGLÉS V
+            30: 60,  # LIDERAZGO DE EQUIPOS DE ALTO DESEMPEÑO
+            31: 75,  # ECUACIONES DIFERENCIALES
+            32: 90,  # APLICACIONES WEB ORIENTADAS A SERVICIOS
+            33: 75,  # BASES DE DATOS AVANZADAS
+            34: 90,  # ESTÁNDARES Y MÉTRICAS PARA EL DESARROLLO DE SOFTWARE
+            35: 60,  # PROYECTO INTEGRADOR II
+            
+            # Sexto cuatrimestre
+            36: 600, # ESTADÍA I
+            
+            # Séptimo cuatrimestre
+            37: 75,  # INGLÉS VI
+            38: 60,  # HABILIDADES GERENCIALES
+            39: 60,  # FORMULACIÓN DE PROYECTOS DE TECNOLOGÍA
+            40: 90,  # FUNDAMENTOS DE INTELIGENCIA ARTIFICIAL
+            41: 60,  # ÉTICA Y LEGISLACIÓN EN TECNOLOGÍAS DE LA INFORMACIÓN
+            42: 90,  # OPTATIVA I
+            43: 90,  # SEGURIDAD INFORMÁTICA
+            
+            # Octavo cuatrimestre
+            44: 75,  # INGLÉS VII
+            45: 75,  # ELECTRÓNICA DIGITAL
+            46: 60,  # GESTIÓN DE PROYECTOS DE TECNOLOGÍA
+            47: 75,  # PROGRAMACIÓN PARA INTELIGENCIA ARTIFICIAL
+            48: 75,  # ADMINISTRACIÓN DE SERVIDORES
+            49: 90,  # OPTATIVA II
+            50: 75,  # INFORMÁTICA FORENSE
+            
+            # Noveno cuatrimestre
+            51: 75,  # INGLÉS VIII
+            52: 75,  # INTERNET DE LAS COSAS
+            53: 60,  # EVALUACIÓN DE PROYECTOS DE TECNOLOGÍA
+            54: 90,  # CIENCIA DE DATOS
+            55: 75,  # TECNOLOGÍAS DISRUPTIVAS
+            56: 90,  # OPTATIVA III
+            57: 60,  # PROYECTO INTEGRADOR III
+            
+            # Décimo cuatrimestre
+            58: 600  # ESTADÍA II
+        } 
         # Mapeo de materias a grupos disponibles
         self.materia_a_grupos = {}
         
@@ -113,9 +191,26 @@ class Optimizador:
                         continue
                 
                 # Estadía 2 (cuatrimestre 10)
-                elif materia.cuatrimestre == 10:
-                    # Solo disponible en el último cuatrimestre
-                    if estudiante.cuatrimestre < 10:
+                elif materia.tipo == "Estadía" and materia.cuatrimestre == 10:
+                    # Si ya completó todas las materias excepto las estadías, permitir cursarla
+                    todas_materias_excepto_estadias = [
+                        id_mat for id_mat, mat in self.materias.items() 
+                        if mat.tipo != "Estadía" and id_mat != id_materia
+                    ]
+                    
+                    # Verificar si completó todas las materias regulares
+                    todas_completadas = all(id_mat in estudiante.materias_aprobadas for id_mat in todas_materias_excepto_estadias)
+                    
+                    # Verificar que haya aprobado Proyecto Integrador 3
+                    proyecto_integrador_3_id = 57
+                    pi3_aprobado = proyecto_integrador_3_id in estudiante.materias_aprobadas
+                    
+                    # Si todas están completas o está en el cuatrimestre adecuado, permitir
+                    if (todas_completadas and pi3_aprobado) or estudiante.cuatrimestre >= 10:
+                        # No aplicar restricción de cuatrimestre
+                        pass
+                    else:
+                        # Si no cumple condiciones especiales, no disponible
                         continue
             
             # Verificar seriación
@@ -344,13 +439,34 @@ class Optimizador:
         
         # 4. Evaluar balance de carga por día (prioridad alta)
         carga_por_dia = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}  # Lunes a Viernes
-        
+
         for id_grupo in horario:
-            for dia, _, _, _ in self.grupos[id_grupo].horarios:
+            grupo = self.grupos.get(id_grupo)
+            if not grupo or not hasattr(grupo, 'horarios'):
+                continue
+                
+            for dia, hora_inicio, hora_fin, _ in grupo.horarios:
                 if 1 <= dia <= 5:  # Solo consideramos días hábiles
-                    carga_por_dia[dia] += 1
-        
+                    # Convertir a enteros si son strings
+                    if isinstance(hora_inicio, str):
+                        hora_inicio = int(hora_inicio.split(':')[0])
+                    if isinstance(hora_fin, str):
+                        hora_fin = int(hora_fin.split(':')[0])
+                    
+                    # Calcular duración real en horas
+                    duracion = hora_fin - hora_inicio
+                    
+                    # Acumular horas por día
+                    carga_por_dia[dia] += duracion
+                
         desviacion_estandar = np.std(list(carga_por_dia.values()))
+        
+        # Verificar si hay días con más de 8 horas (sobrecarga) o con solo 1-2 horas (ineficiente)
+        dias_sobrecargados = sum(1 for carga in carga_por_dia.values() if carga > 8)
+        dias_poco_eficientes = sum(1 for carga in carga_por_dia.values() if 0 < carga <= 2)
+        
+        # Calcular penalización por distribución ineficiente
+        penalizacion_distribucion = 0.05 * (dias_sobrecargados + dias_poco_eficientes)
         
         # 5. Priorizar materias de cuatrimestres anteriores para irregulares (prioridad alta)
         prioridad_materias = 0
@@ -363,59 +479,89 @@ class Optimizador:
                 if cuatrimestre_materia < estudiante.cuatrimestre:
                     prioridad_materias += (estudiante.cuatrimestre - cuatrimestre_materia)
         
-        # 6. Satisfacción de preferencias del estudiante (prioridad baja)
-        satisfaccion_preferencias = 0
-        
-        # Preferencia de horario (mañana, tarde, noche)
-        if 'preferencia_hora' in estudiante.preferencias:
-            pref_horario = estudiante.preferencias['preferencia_hora']
-            
+        # 6. Verificar eficiencia del uso de horas consecutivas
+        # (Premiar horarios que agrupan materias en bloques consecutivos sin "huecos")
+        horas_consecutivas = 0
+        horas_con_huecos = 0
+        for dia in range(1, 6):
+            # Crear mapa de horas ocupadas para este día
+            horas_ocupadas = [False] * 12  # De 8AM a 8PM
             for id_grupo in horario:
-                for _, hora_inicio, _, _ in self.grupos[id_grupo].horarios:
-                    if isinstance(hora_inicio, str):
-                        hora = int(hora_inicio.split(':')[0])
-                    else:
-                        hora = hora_inicio
+                grupo = self.grupos.get(id_grupo)
+                if not grupo or not hasattr(grupo, 'horarios'):
+                    continue
                     
-                    if (pref_horario == 'mañana' and 8 <= hora < 12) or \
-                    (pref_horario == 'tarde' and 12 <= hora < 18) or \
-                    (pref_horario == 'noche' and hora >= 18):
-                        satisfaccion_preferencias += 1
-        
-        # Preferencia de días (peso reducido)
-        if 'dias_preferidos' in estudiante.preferencias:
-            dias_pref = estudiante.preferencias['dias_preferidos']
-            dias_asignados = set()
+                for d, inicio, fin, _ in grupo.horarios:
+                    if d == dia:
+                        h_inicio = int(inicio.split(':')[0]) if isinstance(inicio, str) else inicio
+                        h_fin = int(fin.split(':')[0]) if isinstance(fin, str) else fin
+                        for h in range(h_inicio - 8, h_fin - 8):  # Convertir a índice 0-11
+                            if 0 <= h < 12:
+                                horas_ocupadas[h] = True
             
-            for id_grupo in horario:
-                for dia, _, _, _ in self.grupos[id_grupo].horarios:
-                    dias_asignados.add(dia)
+            # Contar bloques consecutivos y huecos
+            bloque_actual = 0
+            for hora in horas_ocupadas:
+                if hora:
+                    bloque_actual += 1
+                elif bloque_actual > 0:  # Fin de un bloque
+                    if bloque_actual >= 2:
+                        horas_consecutivas += bloque_actual
+                    else:
+                        horas_con_huecos += 1
+                    bloque_actual = 0
             
-            # Calcular preferencias satisfechas
-            dias_coincidentes = sum(1 for dia in dias_asignados if dia in dias_pref)
-            if dias_coincidentes > 0:
-                # Dar algún valor, pero menor al de otras preferencias
-                satisfaccion_preferencias += (dias_coincidentes / len(dias_asignados)) * 0.5
+            # Procesar último bloque si existe
+            if bloque_actual > 0:
+                if bloque_actual >= 2:
+                    horas_consecutivas += bloque_actual
+                else:
+                    horas_con_huecos += 1
         
-        # Construir fitness final (ponderado)
+        # Bonificación por eficiencia de horario
+        bonificacion_eficiencia = 0.1 * (horas_consecutivas / (horas_consecutivas + horas_con_huecos + 1))
+        
+        # 7. Balance entre materias del mismo tipo (evitar sobrecarga de un solo tipo)
+        tipos_materia = {}
+        for id_grupo in horario:
+            grupo = self.grupos.get(id_grupo)
+            if not grupo:
+                continue
+                
+            id_materia = grupo.id_materia
+            materia = self.materias.get(id_materia)
+            if not materia:
+                continue
+                
+            tipo = materia.tipo
+            tipos_materia[tipo] = tipos_materia.get(tipo, 0) + 1
+        
+        # Bonificación por diversidad de tipos
+        diversidad_tipos = min(1.0, len(tipos_materia) / 3)  # Normalizado a max 1.0
+        
+        # Construir fitness final (combinando todos los factores)
         if estudiante.es_regular():
-            # Para regulares, priorizar tener 7 materias y balance de carga
+            # Para regulares: enfoque en completar su cuatrimestre actual
             fitness = (
-                0.40 * penalizacion_materias +                # Número correcto de materias (muy alto)
-                0.35 * (1 / (1 + desviacion_estandar)) +      # Balance de carga (alto)
-                0.15 * (total_creditos / estudiante.max_creditos) + # Uso eficiente de créditos (medio)
-                0.10 * satisfaccion_preferencias              # Preferencias (bajo)
+                0.40 * penalizacion_materias +           # Número correcto de materias (muy alto)
+                0.20 * (1 / (1 + desviacion_estandar)) + # Balance de carga (medio)
+                0.15 * (total_creditos / estudiante.max_creditos) + # Uso eficiente de créditos
+                0.15 * bonificacion_eficiencia +         # Eficiencia de horario
+                0.10 * diversidad_tipos -                # Diversidad de tipos de materia
+                penalizacion_distribucion                # Penalización por distribución ineficiente
             )
         else:
-            # Para irregulares, priorizar materias atrasadas y balance de carga
+            # Para irregulares: priorizar materias atrasadas y optimización
             fitness = (
-                0.30 * penalizacion_materias +                # Número de materias (alto)
-                0.30 * (1 / (1 + desviacion_estandar)) +      # Balance de carga (alto)
-                0.30 * prioridad_materias +                   # Materias atrasadas (alto)
-                0.10 * satisfaccion_preferencias              # Preferencias (bajo)
+                0.30 * penalizacion_materias +           # Número de materias
+                0.15 * (1 / (1 + desviacion_estandar)) + # Balance de carga
+                0.30 * prioridad_materias +              # Materias atrasadas (alta prioridad)
+                0.15 * bonificacion_eficiencia +         # Eficiencia de horario
+                0.10 * diversidad_tipos -                # Diversidad de tipos de materia
+                penalizacion_distribucion                # Penalización por distribución ineficiente
             )
         
-        return fitness
+        return max(0.0, min(1.0, fitness))  # Normalizar entre 0 y 1
     
     def seleccionar_padres(self, poblacion, fitness, num_padres):
         """Selecciona padres para reproducción usando selección por torneo.
@@ -551,12 +697,16 @@ class Optimizador:
         dias = {1: "Lunes", 2: "Martes", 3: "Miércoles", 4: "Jueves", 5: "Viernes"}
         horas = list(range(7, 22))  # De 7am a 9pm
         
-        horario_semanal = {dia: {hora: None for hora in horas} for dia in dias.keys()}
+        # Inicializar estructura correcta: primero por nombre de día, luego por hora formateada
+        horario_semanal = {}
+        for numero_dia, nombre_dia in dias.items():
+            horario_semanal[nombre_dia] = {}
+            for hora in horas:
+                horario_semanal[nombre_dia][f"{hora}:00"] = None
         
         # Verificar que el horario no sea None
         if horario is None:
-            return {dia_nombre: {f"{hora}:00": None for hora in horas} 
-                    for dia, dia_nombre in dias.items()}
+            return horario_semanal
         
         for id_grupo in horario:
             grupo = self.grupos.get(id_grupo)
@@ -602,39 +752,30 @@ class Optimizador:
                     "grupo": grupo.id
                 }
                 
+                # Ahora usamos el nombre del día directamente y el formato correcto de hora
+                nombre_dia = dias[dia]
                 for hora in range(inicio_hora, fin_hora):
-                    if dia in horario_semanal and hora in horario_semanal[dia]:
-                        horario_semanal[dia][hora] = info_clase
+                    hora_formateada = f"{hora}:00"
+                    horario_semanal[nombre_dia][hora_formateada] = info_clase
         
-        # Convertir a formato más amigable para la API
-        formato_api = {}
-        for dia, horas_dict in horario_semanal.items():
-            dia_nombre = dias.get(dia, f"Día {dia}")
-            formato_api[dia_nombre] = {}
-            for hora, info in horas_dict.items():
-                formato_api[dia_nombre][f"{hora}:00"] = info
-        
-        return formato_api
+        return horario_semanal
     
-    def _generar_horario_semanal_simple(self, materias_con_horarios):
-        """Genera un horario semanal a partir de materias y sus horarios.
-        
-        Args:
-            materias_con_horarios: Iterable de tuplas (id_materia, horarios)
-            
-        Returns:
-            dict: Horario semanal en formato API
-        """
+    def _generar_horario_semanal_realista(self, materias_con_horarios):
+        """Genera un horario semanal realista a partir de materias y sus horarios."""
         dias_nombre = {1: "Lunes", 2: "Martes", 3: "Miércoles", 4: "Jueves", 5: "Viernes"}
-        slots_disponibles = ["8:00", "10:00", "12:00", "14:00", "16:00", "18:00"]
         
-        # Inicializar horario vacío
+        # Crear slots horarios
+        slots_disponibles = []
+        for hora in range(7, 21):
+            slots_disponibles.append(f"{hora}:00")
+        
+        # Inicializar horario
         horario = {
             dia_nombre: {slot: None for slot in slots_disponibles}
             for dia_nombre in dias_nombre.values()
         }
         
-        # Asignar materias a los slots
+        # Asignar materias a slots
         for id_materia, horarios_materia in materias_con_horarios:
             if not horarios_materia:
                 continue
@@ -643,43 +784,70 @@ class Optimizador:
             if not materia:
                 continue
                 
+            # Asegurarnos de tener el nombre de la materia
+            nombre_materia = materia.nombre if hasattr(materia, 'nombre') and materia.nombre else f"Materia {id_materia}"
+            
             for dia, hora_inicio, hora_fin, aula in horarios_materia:
                 if dia not in dias_nombre:
                     continue
                     
                 dia_nombre = dias_nombre[dia]
                 
-                # Asignar al slot más cercano
-                slot_asignado = None
-                for slot in slots_disponibles:
-                    if slot.startswith(hora_inicio.split(':')[0]) or slot == f"{int(hora_inicio.split(':')[0])}:00":
-                        slot_asignado = slot
-                        break
+                # Extraer horas
+                h_inicio = int(hora_inicio.split(':')[0]) if isinstance(hora_inicio, str) else hora_inicio
+                h_fin = int(hora_fin.split(':')[0]) if isinstance(hora_fin, str) else hora_fin
                 
-                if slot_asignado:
-                    horario[dia_nombre][slot_asignado] = {
-                        "materia": materia.nombre,
-                        "profesor": "Por asignar",
-                        "aula": aula,
-                        "grupo": 0
-                    }
+                # Asignar a cada slot
+                for hora in range(h_inicio, h_fin):
+                    slot = f"{hora}:00"
+                    if slot in horario[dia_nombre]:
+                        # Crear info para el primer slot
+                        if hora == h_inicio:
+                            info_clase = {
+                                "materia": nombre_materia,  # Asegurar que siempre hay nombre
+                                "profesor": "Por asignar",
+                                "aula": aula,
+                                "grupo": 0,
+                                "duracion": h_fin - h_inicio,
+                                "horaInicio": slot
+                            }
+                        else:
+                            # Continuar con la misma info
+                            info_clase = horario[dia_nombre].get(f"{h_inicio}:00")
+                        
+                        horario[dia_nombre][slot] = info_clase
         
         return horario
     
+     # Calcular número de sesiones requeridas por materia (aproximado)
+    def calcular_sesiones(self, id_materia):
+        """Calcula el número óptimo de sesiones semanales por materia basado en horas totales."""
+        horas_totales = self.horas_por_materia.get(id_materia, 75)  # Default 75 si no está especificada
+
+        # Para estadías, necesitamos un tratamiento especial
+        if id_materia in [36, 58]:  # IDs de Estadía I y Estadía II
+            return 5  # Una sesión diaria para estadías (tiempo completo)
+        
+        # Para un cuatrimestre de 15 semanas, dividir las horas totales
+        horas_semanales = horas_totales / 15
+        
+        # Determinar el número óptimo de sesiones basado en horas semanales
+        # Priorizar menos sesiones pero más largas cuando sea posible
+        if horas_semanales <= 3:
+            return 1  # Una sesión semanal
+        elif horas_semanales <= 5:
+            return 2  # Dos sesiones semanales
+        elif horas_semanales <= 8:
+            return 3  # Tres sesiones semanales
+        else:
+            return 4  # Para materias con alta carga horaria
+    
     def simular_planificacion_cuatrimestre(self, estudiante, materias_disponibles, num_cuatrimestre):
-        """Simula la planificación de un cuatrimestre sin ejecutar el algoritmo genético completo.
+        """Simula la planificación de un cuatrimestre con horarios realistas basados en la carga horaria."""
+        import math
+        import random
         
-        Esta función es útil para la planificación a largo plazo donde no necesitamos
-        la precisión completa del algoritmo genético, sino una aproximación razonable.
-        
-        Args:
-            estudiante (Estudiante): Objeto estudiante para el que se planifica.
-            materias_disponibles (List[int]): Lista de IDs de materias disponibles.
-            num_cuatrimestre (int): Número de cuatrimestre a planificar.
-            
-        Returns:
-            dict: Diccionario con información del cuatrimestre planificado.
-        """
+        # Si no hay materias disponibles, devolver estructura vacía
         if not materias_disponibles:
             return {
                 "cuatrimestre": num_cuatrimestre,
@@ -695,42 +863,56 @@ class Optimizador:
         estadias = [id_materia for id_materia in materias_disponibles 
                 if self.materias.get(id_materia) and self.materias[id_materia].tipo == "Estadía"]
         
-        # Si hay estadías, solo planificar la estadía
+        # Si hay estadías, solo planificar la estadía (caso especial)
         if estadias:
-            id_estadia = estadias[0]  # Tomar la primera estadía disponible
+            id_estadia = estadias[0]
             materia_estadia = self.materias[id_estadia]
+            
+            # Confirmar las horas totales
+            horas_totales = self.horas_por_materia.get(id_estadia, 600)
+            horas_semanales = horas_totales / 15  # 40 horas semanales
+            
+            # Crear horarios que representen tiempo completo (8 horas diarias, 5 días)
+            horarios_estadia = []
+            for dia in range(1, 6):  # Lunes a Viernes
+                # Mañana (4 horas)
+                horarios_estadia.append((dia, "08:00", "12:00", f"A{100+dia}"))
+                # Tarde (4 horas)
+                horarios_estadia.append((dia, "13:00", "17:00", f"A{100+dia}"))
+            
+            # Carga horaria precisa por día
+            carga_horas_por_dia = {1: 8, 2: 8, 3: 8, 4: 8, 5: 8}
             
             return {
                 "cuatrimestre": num_cuatrimestre,
                 "materias_inscritas": [{
                     "id_materia": id_estadia,
                     "nombre_materia": materia_estadia.nombre,
-                    "id_grupo": 0,  # Grupo simulado
+                    "id_grupo": 0,
                     "profesor": "Por asignar",
                     "creditos": materia_estadia.creditos,
                     "cuatrimestre": materia_estadia.cuatrimestre,
                     "tipo": materia_estadia.tipo,
-                    "horarios": [(1, "08:00", "10:00", "A101")]  # Horario simulado
+                    "horarios": horarios_estadia,
+                    "es_tiempo_completo": True, 
+                    "horas_totales": horas_totales,
+                    "horas_semanales": horas_semanales
                 }],
                 "creditos_totales": materia_estadia.creditos,
                 "num_materias": 1,
-                "horario_semanal": self._generar_horario_semanal_simple([(id_estadia, [(1, "08:00", "10:00", "A101")])]),
-                "carga_por_dia": {1: 1, 2: 0, 3: 0, 4: 0, 5: 0}
+                "horario_semanal": self._generar_horario_semanal_realista([(id_estadia, horarios_estadia)]),
+                "carga_por_dia": carga_horas_por_dia,
+                "horas_semanales": 40,
+                "nota_especial": f"La estadía requiere dedicación a tiempo completo de 40 horas semanales ({horas_totales} horas en total)."
             }
         
-        # Determinar número exacto de materias
-        # Para regulares siempre 7, para irregulares hasta 5 (según disponibilidad)
+        # Determinar número de materias según tipo de estudiante
         if estudiante.es_regular():
-            # Asegurar que tengamos exactamente 7 materias si están disponibles
             num_materias = min(7, len(materias_disponibles))
-            # Si no hay 7 materias disponibles, emitir advertencia
-            if num_materias < 7:
-                print(f"Advertencia: Solo hay {num_materias} materias disponibles para el estudiante regular en el cuatrimestre {num_cuatrimestre}")
         else:
-            # Para irregulares, máximo 5 materias
             num_materias = min(5, len(materias_disponibles))
         
-        # Tomar las materias disponibles limitadas según el tipo de estudiante
+        # Tomar las materias disponibles
         materias_a_cursar = materias_disponibles[:num_materias]
         
         # Acumular información de las materias
@@ -738,42 +920,108 @@ class Optimizador:
         creditos_totales = 0
         horarios_por_materia = {}
         
-        # Distribuir materias en los días de la semana
-        dias_de_semana = list(range(1, 6))  # 1=Lunes a 5=Viernes
+        # Distribución de carga por día
+        carga_actual_por_dia = {dia: 0 for dia in range(1, 6)}
+        
+        # Franjas horarias predefinidas
+        franjas_horarias = [
+            [(8, 10), (10, 12)],       # Mañana (8AM-12PM)
+            [(12, 14), (14, 16)],      # Temprano tarde (12PM-4PM)
+            [(16, 18), (18, 20)]       # Tarde (4PM-8PM)
+        ]
+        
+        # Pesos de preferencia para franjas (horario institucional principal: 8AM-4PM)
+        pesos_franjas = [0.6, 0.3, 0.1]  # 60% mañana, 30% temprano tarde, 10% tarde
         
         for id_materia in materias_a_cursar:
             materia = self.materias.get(id_materia)
             if not materia:
                 continue
+            
+            # Obtener horas totales y semanales
+            horas_totales = self.horas_por_materia.get(id_materia, 75)
+            horas_semanales = horas_totales / 15
+            
+            # Calcular número de sesiones necesarias
+            sesiones_requeridas = self.calcular_sesiones(id_materia)
+            
+            # Determinar si es una materia avanzada o especial
+            es_materia_avanzada = materia.cuatrimestre >= 7 or materia.tipo == "Optativa"
+            
+            # Distribuir en diferentes días intentando balancear la carga
+            dias_disponibles = sorted(range(1, 6), key=lambda d: carga_actual_por_dia[d])
+            
+            # Limitar el número de sesiones según las horas semanales
+            # Preferir menos sesiones pero más largas
+            if horas_semanales <= 3:
+                num_sesiones = 1  # Una sesión a la semana
+            elif horas_semanales <= 5:
+                num_sesiones = min(2, sesiones_requeridas)
+            elif horas_semanales <= 8:
+                num_sesiones = min(3, sesiones_requeridas)
+            else:
+                num_sesiones = min(3, sesiones_requeridas)
                 
-            # Asignar horarios de manera inteligente para evitar conflictos
-            # Para materias de más créditos (5+), asignar 2 días
-            # Para materias de menos créditos, asignar 1 día
-            dias_asignados = []
+            # Ajustar para cuadrar con horas totales y evitar sesiones demasiado cortas
+            num_sesiones = max(1, min(num_sesiones, 3))
             
-            # Decidir cuántos días necesita esta materia
-            num_dias_necesarios = 2 if materia.creditos >= 5 else 1
+            # Si solo hay una sesión, asegurarnos de que dure suficiente tiempo
+            if num_sesiones == 1:
+                duracion_minima = max(2, math.ceil(horas_semanales))
+            else:
+                duracion_minima = max(2, math.ceil(horas_semanales / num_sesiones))
+                
+            # Limitar duración máxima por sesión para evitar bloques demasiado largos
+            duracion_minima = min(duracion_minima, 4)
             
-            # Intentar asignar días balanceados (para no sobrecargar un solo día)
-            dias_disponibles = dias_de_semana.copy()
-            random.shuffle(dias_disponibles)
+            # Seleccionar días para esta materia
+            dias_asignados = dias_disponibles[:num_sesiones]
             
-            # Recorrer días en orden aleatorio hasta encontrar suficientes disponibles
-            for _ in range(num_dias_necesarios):
-                if dias_disponibles:
-                    dias_asignados.append(dias_disponibles.pop(0))
-            
-            # Si no hay suficientes días disponibles, usar los que quedan
-            while len(dias_asignados) < num_dias_necesarios and dias_de_semana:
-                dia_aleatorio = random.choice(dias_de_semana)
-                if dia_aleatorio not in dias_asignados:
-                    dias_asignados.append(dia_aleatorio)
-            
-            # Asignar horarios para la materia
+            # Asignar horarios para esta materia
             horarios_materia = []
-            for dia in dias_asignados:
-                # Asignar un horario fijo para simplificar
-                horarios_materia.append((dia, "08:00", "10:00", "A101"))
+            
+            # Crear mensaje informativo sobre horas
+            descripcion_horas = f"Materia de {horas_totales} horas totales ({horas_semanales:.1f} horas semanales)"
+            
+            for idx, dia in enumerate(dias_asignados):
+                # Para materias regulares, preferir horarios de 8AM-4PM
+                if not es_materia_avanzada:
+                    franja_idx = random.choices(range(len(franjas_horarias)-1), 
+                                            weights=pesos_franjas[:2], k=1)[0]
+                else:
+                    # Para materias avanzadas, permitir cualquier franja
+                    franja_idx = random.choices(range(len(franjas_horarias)), 
+                                            weights=pesos_franjas, k=1)[0]
+                
+                # Si es después del primer día, tratar de mantener mismo horario para continuidad
+                if idx > 0 and horarios_materia:
+                    hora_previa = int(horarios_materia[0][1].split(':')[0])
+                    for i, franja in enumerate(franjas_horarias):
+                        for inicio, _ in franja:
+                            if inicio == hora_previa:
+                                franja_idx = i
+                                break
+                
+                # Seleccionar slot dentro de la franja
+                opciones_slot = franjas_horarias[franja_idx]
+                if len(opciones_slot) > 0:
+                    slot_idx = random.randint(0, len(opciones_slot) - 1)
+                    inicio, _ = opciones_slot[slot_idx]
+                else:
+                    # Si no hay opciones (caso inesperado), usar 8AM
+                    inicio = 8
+                
+                # Calcular fin basado en la duración requerida
+                fin = inicio + duracion_minima
+                
+                # Generar aula
+                aula = f"{random.choice(['A', 'B', 'C'])}{random.randint(101, 310)}"
+                
+                # Agregar este horario
+                horarios_materia.append((dia, f"{inicio}:00", f"{fin}:00", aula))
+                
+                # Actualizar carga actual por día
+                carga_actual_por_dia[dia] += duracion_minima
             
             # Guardar horarios de esta materia
             horarios_por_materia[id_materia] = horarios_materia
@@ -792,15 +1040,28 @@ class Optimizador:
             
             creditos_totales += materia.creditos
         
-        # Calcular carga por día
+        # Calcular carga actualizada por día
         carga_por_dia = {dia: 0 for dia in range(1, 6)}
         for id_materia, horarios in horarios_por_materia.items():
-            for dia, _, _, _ in horarios:
+            for dia, hora_inicio_str, hora_fin_str, _ in horarios:
                 if 1 <= dia <= 5:
-                    carga_por_dia[dia] += 1
+                    # Convertir horas a enteros
+                    if isinstance(hora_inicio_str, str):
+                        hora_inicio = int(hora_inicio_str.split(':')[0])
+                    else:
+                        hora_inicio = hora_inicio_str
+                        
+                    if isinstance(hora_fin_str, str):
+                        hora_fin = int(hora_fin_str.split(':')[0])
+                    else:
+                        hora_fin = hora_fin_str
+                    
+                    # Calcular y acumular horas por día
+                    duracion = hora_fin - hora_inicio
+                    carga_por_dia[dia] += duracion
         
         # Generar horario semanal
-        horario_semanal = self._generar_horario_semanal_simple(horarios_por_materia.items())
+        horario_semanal = self._generar_horario_semanal_realista(horarios_por_materia.items())
         
         return {
             "cuatrimestre": num_cuatrimestre,
@@ -810,7 +1071,6 @@ class Optimizador:
             "horario_semanal": horario_semanal,
             "carga_por_dia": carga_por_dia
         }
-    
     def verificar_prerequisitos(self, id_materia, materias_aprobadas):
         """Verifica si una materia cumple con todos sus prerrequisitos.
         
@@ -837,15 +1097,7 @@ class Optimizador:
         return True 
     
     def verificar_prerequisitos_para_estadia(self, id_estadia, materias_aprobadas):
-        """Verifica los prerrequisitos específicos para cursar una estadía.
-        
-        Args:
-            id_estadia: ID de la estadía a verificar
-            materias_aprobadas: Conjunto de IDs de materias aprobadas
-            
-        Returns:
-            bool: True si cumple con los requisitos para cursar la estadía
-        """
+        """Verifica los prerrequisitos específicos para cursar una estadía."""
         materia = self.materias.get(id_estadia)
         if not materia or materia.tipo != "Estadía":
             return False
@@ -865,10 +1117,20 @@ class Optimizador:
         
         # Estadía 2 (cuatrimestre 10)
         elif materia.cuatrimestre == 10:
-            # Verificar Proyecto Integrador 3 (ID 57)
+            # Verificar si ha aprobado el Proyecto Integrador 3 (requisito mínimo)
             proyecto_integrador_3_id = 57
             if proyecto_integrador_3_id not in materias_aprobadas:
                 return False
+                
+            # Si ha aprobado PI3, verificamos si todas las demás materias (excepto Estadía 2) están aprobadas
+            todas_materias_excepto_estadias = [
+                id_mat for id_mat, mat in self.materias.items() 
+                if mat.tipo != "Estadía" and id_mat != id_estadia
+            ]
+            
+            # Si todas las materias están aprobadas, permitir Estadía 2 independientemente del cuatrimestre
+            if all(id_mat in materias_aprobadas for id_mat in todas_materias_excepto_estadias):
+                return True
         
         # Verificar seriación general
         return self.verificar_prerequisitos(id_estadia, materias_aprobadas)
@@ -929,6 +1191,20 @@ class Optimizador:
             max_ciclos = 20
             ciclo_actual = 0
             
+            # Para estudiantes regulares, mostrar estadías en sus cuatrimestres correspondientes (6 y 10)
+            es_regular = estudiante_simulado.es_regular()
+            id_estadia1 = None
+            id_estadia2 = None
+            
+            # Buscar IDs de las estadías para mostrarlas en los cuatrimestres correspondientes
+            if es_regular:
+                for id_materia, materia in self.materias.items():
+                    if materia.tipo == "Estadía":
+                        if materia.cuatrimestre == 6:
+                            id_estadia1 = id_materia
+                        elif materia.cuatrimestre == 10:
+                            id_estadia2 = id_materia
+            
             while materias_pendientes_por_cuatrimestre and cuatrimestre_planificacion <= MAX_CUATRIMESTRES and ciclo_actual < max_ciclos:
                 ciclo_actual += 1
                 
@@ -938,15 +1214,61 @@ class Optimizador:
                 # Limpiar inscripciones simuladas anteriores
                 estudiante_simulado.inscripciones_simuladas = []
                 
+                # CASO ESPECIAL PARA REGULARES: Mostrar estadías en cuatrimestres 6 y 10
+                if es_regular and ((cuatrimestre_planificacion == 6 and id_estadia1) or 
+                                (cuatrimestre_planificacion == 10 and id_estadia2)):
+                    
+                    id_estadia = id_estadia1 if cuatrimestre_planificacion == 6 else id_estadia2
+                    materia_estadia = self.materias[id_estadia]
+                    
+                    # Para alumnos regulares, mostrar la estadía sin verificar prerrequisitos
+                    carga_cuatrimestre = {
+                        "cuatrimestre": cuatrimestre_planificacion,
+                        "materias_inscritas": [{
+                            "id_materia": id_estadia,
+                            "nombre_materia": materia_estadia.nombre,
+                            "id_grupo": 0,  # Grupo simulado
+                            "profesor": "Por asignar",
+                            "creditos": materia_estadia.creditos,
+                            "cuatrimestre": materia_estadia.cuatrimestre,
+                            "tipo": materia_estadia.tipo,
+                            "horarios": []
+                        }],
+                        "creditos_totales": materia_estadia.creditos,
+                        "num_materias": 1,
+                        "horario_semanal": {},
+                        "carga_por_dia": {1:0, 2:0, 3:0, 4:0, 5:0}
+                    }
+                    
+                    plan_completo["plan_por_cuatrimestre"][cuatrimestre_planificacion] = carga_cuatrimestre
+                    simulacion_aprobadas.add(id_estadia)
+                    
+                    # Eliminar de pendientes
+                    for cuatri in list(materias_pendientes_por_cuatrimestre.keys()):
+                        if id_estadia in materias_pendientes_por_cuatrimestre[cuatri]:
+                            materias_pendientes_por_cuatrimestre[cuatri].remove(id_estadia)
+                            total_materias_pendientes -= 1
+                    
+                    # Ya no buscar más materias para este cuatrimestre
+                    cuatrimestre_planificacion += 1
+                    continue
+                    
+                # Para casos que no son estadías regulares, continuamos con la lógica normal
+                
                 # Obtener materias de estadía disponibles para verificación especial
+                # (Esto aplica principalmente para irregulares o regulares en otros cuatrimestres)
                 estadias_disponibles = []
                 for id_materia, materia in self.materias.items():
                     if (materia.tipo == "Estadía" and 
                         materia.cuatrimestre == cuatrimestre_planificacion and
                         id_materia not in simulacion_aprobadas):
                         
-                        # Verificar prerrequisitos para Estadía
-                        if self.verificar_prerequisitos_para_estadia(id_materia, simulacion_aprobadas):
+                        # Para irregulares, verificar prerrequisitos para estadía
+                        if not es_regular:
+                            if self.verificar_prerequisitos_para_estadia(id_materia, simulacion_aprobadas):
+                                estadias_disponibles.append(id_materia)
+                        # Para regulares, agregar automáticamente si coincide con el cuatrimestre
+                        else:
                             estadias_disponibles.append(id_materia)
                 
                 # Si hay estadías disponibles y cumplen prerrequisitos, planificar solo la estadía
@@ -987,7 +1309,7 @@ class Optimizador:
                     continue
                 
                 # CAMBIO IMPORTANTE: Para estudiantes regulares, tomar TODAS las materias del cuatrimestre actual
-                if estudiante_simulado.es_regular():
+                if es_regular:
                     # Obtener todas las materias pendientes de este cuatrimestre
                     materias_cuatrimestre = materias_por_cuatrimestre.get(cuatrimestre_planificacion, [])
                     materias_pendientes_cuatrimestre = [m for m in materias_cuatrimestre if m not in simulacion_aprobadas]
@@ -1430,16 +1752,7 @@ class Optimizador:
         }
     
     def priorizar_materias(self, materias_disponibles, estudiante, num_cuatrimestre):
-        """Prioriza las materias disponibles según diversos criterios.
-        
-        Args:
-            materias_disponibles (list): Lista de IDs de materias disponibles.
-            estudiante (Estudiante): Objeto estudiante.
-            num_cuatrimestre (int): Número de cuatrimestre actual.
-            
-        Returns:
-            list: Lista ordenada de materias priorizadas.
-        """
+        """Prioriza las materias disponibles para planificación."""
         # Calcular puntaje de prioridad para cada materia
         materias_puntaje = []
         
@@ -1451,27 +1764,36 @@ class Optimizador:
             # Criterios de priorización
             puntaje = 0
             
-            # 1. Materias de cuatrimestres anteriores tienen mayor prioridad
+            # 1. Materias de cuatrimestres anteriores tienen mayor prioridad (muy importante)
             diferencia_cuatri = num_cuatrimestre - materia.cuatrimestre
             if diferencia_cuatri > 0:
-                puntaje += diferencia_cuatri * 10  # Alta prioridad a materias atrasadas
+                puntaje += diferencia_cuatri * 15  # Alta prioridad a materias atrasadas
             
-            # 2. Materias que son prerrequisito de muchas otras
+            # 2. Materias que son prerrequisito de muchas otras (seriación)
             dependientes = 0
             for id_materia_dep, prereqs in self.seriacion.items():
                 if id_materia in prereqs:
                     dependientes += 1
-            puntaje += dependientes * 5
+            puntaje += dependientes * 10
             
-            # 3. Proyectos integradores y Estadías tienen alta prioridad
+            # 3. Prioridad por tipo de materia (especialmente las críticas)
             if materia.tipo == "Proyecto Integrador":
-                puntaje += 15
+                puntaje += 20  # Alta prioridad a proyectos integradores
             elif materia.tipo == "Estadía":
-                puntaje += 20
+                puntaje += 30  # Máxima prioridad a estadías cuando son elegibles
             
-            # 4. Priorizar materias del mismo cuatrimestre
-            if materia.cuatrimestre == num_cuatrimestre:
-                puntaje += 3
+            # 4. Priorizar materias del cuatrimestre actual del estudiante
+            if materia.cuatrimestre == estudiante.cuatrimestre:
+                puntaje += 8
+            
+            # 5. Evitar materias de cuatrimestres muy avanzados para estudiantes en cuatrimestres iniciales
+            # (excepto para estudiantes irregulares en ciertos casos)
+            if not estudiante.es_regular():
+                if materia.cuatrimestre > estudiante.cuatrimestre + 2:
+                    puntaje -= 5  # Penalización leve por materias muy adelantadas
+            else:
+                if materia.cuatrimestre > estudiante.cuatrimestre:
+                    puntaje -= 15  # Penalización fuerte para estudiantes regulares
             
             materias_puntaje.append((id_materia, puntaje))
         

@@ -278,23 +278,41 @@ def optimizar_horario(id_estudiante):
                 # Obtener información detallada del horario
                 materias_inscritas = []
                 creditos_totales = 0
-                
+
                 for id_grupo in mejor_horario:
                     grupo = data_loader.grupos.get(id_grupo)
                     if grupo:
-                        materia = data_loader.materias.get(grupo.id_materia)
+                        id_materia = grupo.id_materia
+                        materia = data_loader.materias.get(id_materia)
+                        
                         if materia:
-                            materias_inscritas.append({
-                                'id_materia': materia.id,
-                                'nombre_materia': materia.nombre,
-                                'id_grupo': grupo.id,
-                                'profesor': grupo.profesor,
-                                'creditos': materia.creditos,
-                                'cuatrimestre': materia.cuatrimestre,
-                                'tipo': materia.tipo,
-                                'horarios': grupo.horarios
-                            })
-                            creditos_totales += materia.creditos
+                            nombre_materia = materia.nombre
+                            creditos = materia.creditos
+                            cuatrimestre = materia.cuatrimestre
+                            tipo = materia.tipo
+                        else:
+                            # Si por alguna razón no se encuentra la materia, usar valores por defecto
+                            nombre_materia = f"Materia {id_materia}"
+                            creditos = 0
+                            cuatrimestre = 0
+                            tipo = "Desconocido"
+                        
+                        # Asegurarse de que estos campos nunca sean None o vacíos
+                        if not nombre_materia:
+                            nombre_materia = f"Materia {id_materia}"
+                        
+                        # Añadir a la lista de materias inscritas
+                        materias_inscritas.append({
+                            'id_materia': id_materia,
+                            'nombre_materia': nombre_materia,  # Asegurar que siempre tiene valor
+                            'id_grupo': grupo.id,
+                            'profesor': grupo.profesor or "Sin asignar",  # Añadir verificación también aquí
+                            'creditos': creditos,
+                            'cuatrimestre': cuatrimestre,
+                            'tipo': tipo,
+                            'horarios': grupo.horarios or []  # Asegurar que horarios no sea None
+                        })
+                        creditos_totales += creditos
                 
                 # Calcular distribución por día
                 carga_por_dia = {}
