@@ -421,7 +421,7 @@ class Optimizador:
                 penalizacion_materias = 1.0  # Óptimo: exactamente 7 materias
         else:
             # Irregulares: flexible, pero con límite máximo
-            max_materias_irregular = 5
+            max_materias_irregular = 7
             if len(materias_inscritas) > max_materias_irregular:
                 return 0.0  # Inválido exceder el máximo
             else:
@@ -910,7 +910,7 @@ class Optimizador:
         if estudiante.es_regular():
             num_materias = min(7, len(materias_disponibles))
         else:
-            num_materias = min(5, len(materias_disponibles))
+            num_materias = min(7, len(materias_disponibles))
         
         # Tomar las materias disponibles
         materias_a_cursar = materias_disponibles[:num_materias]
@@ -941,7 +941,7 @@ class Optimizador:
             # Obtener horas totales y semanales
             horas_totales = self.horas_por_materia.get(id_materia, 75)
             horas_semanales = horas_totales / 15
-            
+            horas_semanales = max(4, horas_semanales) 
             # Calcular número de sesiones necesarias
             sesiones_requeridas = self.calcular_sesiones(id_materia)
             
@@ -949,7 +949,11 @@ class Optimizador:
             es_materia_avanzada = materia.cuatrimestre >= 7 or materia.tipo == "Optativa"
             
             # Distribuir en diferentes días intentando balancear la carga
+            # Primero crea la lista de días
             dias_disponibles = sorted(range(1, 6), key=lambda d: carga_actual_por_dia[d])
+            # dias_disponibles = list(range(1, 6))  # Lunes a Viernes
+            # # Y luego mezcla aleatoriamente los días
+            # random.shuffle(dias_disponibles)  # Aleatorizar para que sea más natural
             
             # Limitar el número de sesiones según las horas semanales
             # Preferir menos sesiones pero más largas
@@ -1386,7 +1390,7 @@ class Optimizador:
                         )
                         
                         # Limitar a 5 materias para irregulares
-                        materias_a_cursar = materias_priorizadas[:5]
+                        materias_a_cursar = materias_priorizadas[:7]
                         
                         # Simular la planificación
                         carga_cuatrimestre = self.simular_planificacion_cuatrimestre(

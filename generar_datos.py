@@ -447,7 +447,8 @@ def generar_estudiantes(carpeta, num_estudiantes=200):
     
     for id_estudiante in range(1, num_estudiantes + 1):
         nombre = f"{random.choice(nombres)} {random.choice(apellidos)} {random.choice(apellidos)}"
-        cuatrimestre = random.randint(1, 5)
+        pesos_cuatrimestres = [25, 20, 18, 15, 12, 10, 8, 6, 4, 2]  # Pesos decrecientes
+        cuatrimestre = random.choices(range(1, 11), weights=pesos_cuatrimestres, k=1)[0]
         # Modificar la línea de asignación de estatus:
         status = "Regular" if cuatrimestre == 1 or random.random() < 0.8 else "Irregular"
         
